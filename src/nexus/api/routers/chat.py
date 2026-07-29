@@ -17,7 +17,8 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from nexus.api.deps import Principal, get_principal
+from nexus.api.deps import require
+from nexus.auth.principal import Principal
 from nexus.providers import CompletionRequest, ProviderError, get_registry
 from nexus.schemas import ChatRequest, ChatResponse, Usage
 
@@ -54,10 +55,14 @@ def _resolve(request: ChatRequest) -> tuple[str, str]:
 async def chat(
     request: ChatRequest,
     response: Response,
-    principal: Annotated[Principal, Depends(get_principal)],
+    principal: Annotated[Principal, Depends(require("gateway.chat.write"))],
 ) -> ChatResponse:
     request_id = uuid.uuid4()
     started = time.perf_counter()
+
+    # The workspace comes from the credential, never from the request body:
+    # a caller must not be able to bill another tenant by asking nicely.
+    workspace_id = principal.workspace_id
 
     # TODO(GW-007): quota and rate-limit check, before any provider call.
     # TODO(GOV-002): pre-request policy evaluation.
@@ -95,6 +100,7 @@ async def chat(
 
     # Callers need to see when routing sent them somewhere other than they asked.
     response.headers["x-nexus-request-id"] = str(request_id)
+    response.headers["x-nexus-workspace"] = str(workspace_id)
     response.headers["x-nexus-model"] = result.model
 
     return ChatResponse(

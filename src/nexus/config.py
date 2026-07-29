@@ -62,6 +62,9 @@ class AuthSettings(BaseModel):
     client_id: str = "nexus-console"
     client_secret: SecretStr | None = None
     session_hours: int = 8
+    # Sliding refresh ceiling: a session may be extended by activity up to here,
+    # then the user signs in again regardless of how active they have been.
+    session_max_hours: int = 24
     # Local convenience only. Guarded at startup so it cannot reach production.
     dev_bypass: bool = False
 

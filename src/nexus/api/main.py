@@ -10,7 +10,7 @@ from fastapi.responses import PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 from nexus import __version__
-from nexus.api.routers import chat, health
+from nexus.api.routers import api_keys, auth, chat, health
 from nexus.config import get_settings
 from nexus.telemetry import setup_telemetry
 
@@ -49,6 +49,8 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(health.router)
+    app.include_router(auth.router)
+    app.include_router(api_keys.router)
     app.include_router(chat.router)
 
     @app.get("/metrics", include_in_schema=False)

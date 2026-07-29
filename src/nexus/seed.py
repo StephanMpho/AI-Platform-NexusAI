@@ -13,7 +13,17 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 
 from nexus.api.deps import DEV_USER, DEV_WORKSPACE
-from nexus.db.models import Model, Provider, User, Workspace, WorkspaceMembership
+from nexus.auth.tokens import generate_api_key
+from nexus.db.models import (
+    ApiKey,
+    Model,
+    Provider,
+    Role,
+    RoleAssignment,
+    User,
+    Workspace,
+    WorkspaceMembership,
+)
 from nexus.db.session import sessionmaker
 
 
@@ -73,8 +83,43 @@ async def seed() -> None:
         ]
 
         session.add_all([workspace, user, membership, provider, *models])
+        await session.flush()
+
+        # Give the local developer the owner role in the demo workspace. The
+        # dev bypass grants everything anyway, but seeding the assignment means
+        # the real resolution path is exercised the moment you turn it off.
+        owner = await session.scalar(
+            select(Role).where(Role.name == "owner", Role.workspace_id.is_(None))
+        )
+        if owner is not None:
+            session.add(
+                RoleAssignment(
+                    workspace_id=DEV_WORKSPACE,
+                    user_id=DEV_USER,
+                    role_id=owner.id,
+                    created_at=datetime.now(UTC),
+                )
+            )
+
+        # A test key so `curl -H "Authorization: Bearer ..."` works immediately.
+        # Printed once here for the same reason the API only shows it once.
+        raw_key, key_hash, key_prefix = generate_api_key("test")
+        session.add(
+            ApiKey(
+                workspace_id=DEV_WORKSPACE,
+                key_prefix=key_prefix,
+                key_hash=key_hash,
+                environment="test",
+                label="local development",
+                scopes=["gateway.chat.write", "knowledge.ask.write"],
+                created_by=DEV_USER,
+                created_at=datetime.now(UTC),
+            )
+        )
+
         await session.commit()
-        print("seeded: 1 workspace, 1 user, mock provider, 2 models")
+        print("seeded: 1 workspace, 1 user (owner), mock provider, 2 models")
+        print(f"test API key (shown once): {raw_key}")
 
 
 if __name__ == "__main__":

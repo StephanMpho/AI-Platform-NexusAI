@@ -46,3 +46,23 @@ async def test_chat_rejects_unknown_model_by_name(client: AsyncClient) -> None:
 async def test_chat_rejects_malformed_requests(client: AsyncClient, payload: dict) -> None:
     response = await client.post("/v1/chat", json=payload)
     assert response.status_code == 422
+
+
+async def test_chat_reports_the_workspace_from_the_credential(client: AsyncClient) -> None:
+    """The workspace must come from the credential, never the request body —
+    otherwise a caller can bill another tenant by asking politely."""
+    response = await client.post(
+        "/v1/chat",
+        json={
+            "messages": [{"role": "user", "content": "hi"}],
+            "model": "mock-fast",
+            "metadata": {"workspace_id": "11111111-1111-1111-1111-111111111111"},
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["x-nexus-workspace"] != "11111111-1111-1111-1111-111111111111"
+
+
+async def test_logout_clears_the_session_cookie(client: AsyncClient) -> None:
+    response = await client.post("/auth/logout")
+    assert response.status_code == 204

@@ -25,3 +25,32 @@ Content-Type: application/json
 
 ### prometheus metrics
 GET {{base}}/metrics
+
+### who am I
+GET {{base}}/auth/me
+
+### what each role grants
+GET {{base}}/auth/permissions
+
+### create an API key — returned once, then only its hash exists
+POST {{base}}/v1/api-keys
+Content-Type: application/json
+
+{
+  "label": "checkout-service",
+  "environment": "test",
+  "scopes": ["gateway.chat.write"]
+}
+
+### list keys — prefixes only, never the key
+GET {{base}}/v1/api-keys
+
+### chat as a service, using the key from the seed output
+POST {{base}}/v1/chat
+Authorization: Bearer nx_test_replace_me
+Content-Type: application/json
+
+{
+  "messages": [{ "role": "user", "content": "hello from a service" }],
+  "model": "mock-fast"
+}
