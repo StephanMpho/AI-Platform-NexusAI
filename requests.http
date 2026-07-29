@@ -1,0 +1,27 @@
+# VS Code REST Client scratchpad — install humao.rest-client and click "Send Request".
+@base = http://localhost:8000
+
+### health
+GET {{base}}/health
+
+### chat via the mock provider (no API key needed)
+POST {{base}}/v1/chat
+Content-Type: application/json
+
+{
+  "messages": [{ "role": "user", "content": "Summarise the leave policy." }],
+  "model": "mock-fast",
+  "metadata": { "task_type": "summarise" }
+}
+
+### routing policy — 501 until GW-003
+POST {{base}}/v1/chat
+Content-Type: application/json
+
+{
+  "messages": [{ "role": "user", "content": "hello" }],
+  "policy": "default"
+}
+
+### prometheus metrics
+GET {{base}}/metrics

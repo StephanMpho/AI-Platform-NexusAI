@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "API (uvicorn, reload)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["nexus.api.main:app", "--reload", "--port", "8000"],
+      "jinja": true,
+      "justMyCode": false
+    },
+    {
+      "name": "Celery worker",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "celery",
+      "args": ["-A", "nexus.worker.celery_app", "worker", "-l", "info"],
+      "justMyCode": false
+    },
+    {
+      "name": "Pytest (current file)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}", "-vv"],
+      "justMyCode": false
+    }
+  ]
+}
